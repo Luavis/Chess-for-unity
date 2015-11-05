@@ -1,7 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-
+using UnityEngine.UI;
+using UnityStandardAssets.ImageEffects;
 
 public enum PieceType {
 	WhiteKing = 1,
@@ -66,6 +67,8 @@ public class Game : MonoBehaviour {
 		"Chess_Pawn_B8",
 	};
 
+	static public Game singleton;
+
 	PieceType[][] chessBoard = new PieceType[][]{
 		new PieceType[]{PieceType.BlackRock, PieceType.BlackKnight, PieceType.BlackBishop, PieceType.BlackKing, PieceType.BlackQueen, PieceType.BlackBishop, PieceType.BlackKnight, PieceType.BlackRock},
 		new PieceType[]{PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn},
@@ -82,14 +85,18 @@ public class Game : MonoBehaviour {
 	GameTurn turn = GameTurn.White;
 	PieceObject selectedObject = null;
 	Piece selectedPiece = null;
-  
-	static public Game singleton;
+
+	public Text winMessage;
 
 	static public Game GetInstance() {
 		return singleton;
 	}
 
 	public void Move(int row, int col, float x, float z) {
+
+		if (selectedObject == null || selectedPiece == null)
+			return;
+
 		if (selectedObject == null)
 			return;
 
@@ -108,7 +115,15 @@ public class Game : MonoBehaviour {
 			foreach(string key in keys) {
 				if(pieceObjects[key].row == row && pieceObjects[key].col == col) {
 					if(pieceObjects[key].IsKing()) {
+						BlurOptimized blur = GameObject.Find ("Main Camera").GetComponent<BlurOptimized> ();
+						Debug.Log (blur);
+						blur.enabled = true;
 
+						if(turn == GameTurn.White) {
+							winMessage.text = "White user Win!";
+						}
+						else
+							winMessage.text = "Black user Win!";
 					}
 					MeshRenderer renderer = pieceObjects[key].gameObject.GetComponent<MeshRenderer>();
 
