@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -43,6 +44,29 @@ public class PieceObject {
 
 	public bool IsBishop() {
 		return (this.pieceType == PieceType.BlackBishop || this.pieceType == PieceType.WhiteBishop);
+	}
+
+	public bool Move(int row, int col) {
+		if (!this.IsAvaibleToGo (row, col, this.IsBlackPiece()))
+			return false;
+
+		bool found = false;
+
+		foreach(int[] pos in this.GetAvailableListToGo()) {
+			if(pos[0] == row && pos[1] == col) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found)
+			return false;
+
+		this.row = row;
+		this.col = col;
+		this.isMoved = true;
+
+		return true;
 	}
 
 	public int[][] GetAvailableListToGo() {

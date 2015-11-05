@@ -89,6 +89,44 @@ public class Game : MonoBehaviour {
 		return singleton;
 	}
 
+	public void Move(int row, int col, float x, float z) {
+		if (selectedObject == null)
+			return;
+
+		int originRow = selectedObject.row;
+		int originCol = selectedObject.col;
+
+		if (selectedObject.Move (row, col)) {
+			selectedPiece.MoveInLocal (new Vector3 (x, selectedPiece.transform.localPosition.y, z));
+		} else {
+			return;
+		}
+
+		if (this.chessBoard [row - 1] [col - 1] != PieceType.None) {
+			string[] keys = (turn == GameTurn.Black) ? whitePieceNames : blackPieceNames;
+
+			foreach(string key in keys) {
+				if(pieceObjects[key].row == row && pieceObjects[key].col == col) {
+					if(pieceObjects[key].IsKing()) {
+
+					}
+					MeshRenderer renderer = pieceObjects[key].gameObject.GetComponent<MeshRenderer>();
+
+					renderer.enabled = false;
+					pieceObjects[key].row = -1;
+					pieceObjects[key].col = -1;
+				}
+			}
+		}
+
+		this.chessBoard [row - 1] [col - 1] = selectedObject.pieceType;
+		this.chessBoard [originRow - 1] [originCol - 1] = PieceType.None;
+
+		this.DeselectPiece (selectedPiece); // deselect!
+
+		this.ChangeTurn ();
+	}
+
 	public PieceType[][] GetChessBoard() {
 		return this.chessBoard;
 	}
@@ -100,7 +138,19 @@ public class Game : MonoBehaviour {
 			this.turn = GameTurn.Black;
 
 		if (selectedObject != null) {
-//			this.DeselectPiece (selectedObject);
+			this.DeselectPiece (selectedPiece);
+		}
+
+		foreach (string name in whitePieceNames) {
+			GameObject piece = pieceObjects[name].gameObject;
+			BoxCollider collider = piece.GetComponent<BoxCollider>();
+			collider.enabled = (GameTurn.Black != this.turn);
+		}
+
+		foreach (string name in blackPieceNames) {
+			GameObject piece = pieceObjects[name].gameObject;
+			BoxCollider collider = piece.GetComponent<BoxCollider>();
+			collider.enabled = (GameTurn.Black == this.turn);
 		}
 	}
 
@@ -264,6 +314,18 @@ public class Game : MonoBehaviour {
 			
 			pieceObjects.Add(blackPieceName, obj);
 			
+		}
+
+		foreach (string name in whitePieceNames) {
+			GameObject piece = pieceObjects[name].gameObject;
+			BoxCollider collider = piece.GetComponent<BoxCollider>();
+			collider.enabled = (GameTurn.Black != this.turn);
+		}
+		
+		foreach (string name in blackPieceNames) {
+			GameObject piece = pieceObjects[name].gameObject;
+			BoxCollider collider = piece.GetComponent<BoxCollider>();
+			collider.enabled = (GameTurn.Black == this.turn);
 		}
 	}
 	
