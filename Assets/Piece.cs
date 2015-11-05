@@ -11,12 +11,9 @@ public class Piece : MonoBehaviour {
 		Behaviour halo = this.GetComponent("Halo") as Behaviour;
 		halo.enabled = !halo.enabled;
 
-		ParticleSystem a = GameObject.Find ("/light_1/a").GetComponentInChildren<ParticleSystem>();
-		a.Play();
-
 		if (halo.enabled)
-			Game.getInstance().SelectPiece(this); 
+			Game.GetInstance().SelectPiece(this); 
 		else
-			Game.getInstance().DeselectPiece(this); 
+			Game.GetInstance().DeselectPiece(this); 
 	}
 }

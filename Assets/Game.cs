@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
+
 public enum PieceType {
 	WhiteKing = 1,
 	WhiteQueen = 2,
@@ -31,7 +32,7 @@ public class Game : MonoBehaviour {
 		"Chess_King_A",
 		"Chess_Queen_A",
 		"Chess_Bishop_A1",
-		"Chess_Bisop_A2",
+		"Chess_Bishop_A2",
 		"Chess_Knight_A1",
 		"Chess_Knight_A2",
 		"Chess_Rock_A1",
@@ -50,7 +51,7 @@ public class Game : MonoBehaviour {
 		"Chess_King_B",
 		"Chess_Queen_B",
 		"Chess_Bishop_B1",
-		"Chess_Bisop_B2",
+		"Chess_Bishop_B2",
 		"Chess_Knight_B1",
 		"Chess_Knight_B2",
 		"Chess_Rock_B1",
@@ -66,14 +67,14 @@ public class Game : MonoBehaviour {
 	};
 
 	PieceType[][] chessBoard = new PieceType[][]{
-		new PieceType[]{PieceType.WhiteRock, PieceType.WhiteKnight, PieceType.WhiteBishop, PieceType.WhiteKing, PieceType.WhiteQueen, PieceType.WhiteBishop, PieceType.WhiteKnight, PieceType.WhiteRock},
-		new PieceType[]{PieceType.WhitePawn, PieceType.WhitePawn, PieceType.WhitePawn, PieceType.WhitePawn, PieceType.WhitePawn, PieceType.WhitePawn, PieceType.WhitePawn, PieceType.WhitePawn},
-		new PieceType[]{PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, },
-		new PieceType[]{PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, },
-		new PieceType[]{PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, },
-		new PieceType[]{PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, },
-		new PieceType[]{PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn},
 		new PieceType[]{PieceType.BlackRock, PieceType.BlackKnight, PieceType.BlackBishop, PieceType.BlackKing, PieceType.BlackQueen, PieceType.BlackBishop, PieceType.BlackKnight, PieceType.BlackRock},
+		new PieceType[]{PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn, PieceType.BlackPawn},
+		new PieceType[]{PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, },
+		new PieceType[]{PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, },
+		new PieceType[]{PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, },
+		new PieceType[]{PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, PieceType.None, },
+		new PieceType[]{PieceType.WhitePawn, PieceType.WhitePawn, PieceType.WhitePawn, PieceType.WhitePawn, PieceType.WhitePawn, PieceType.WhitePawn, PieceType.WhitePawn, PieceType.WhitePawn},
+		new PieceType[]{PieceType.WhiteRock, PieceType.WhiteKnight, PieceType.WhiteBishop, PieceType.WhiteKing, PieceType.WhiteQueen, PieceType.WhiteBishop, PieceType.WhiteKnight, PieceType.WhiteRock},
 	};
 
 	Dictionary<string, PieceObject> pieceObjects = new Dictionary<string, PieceObject>();
@@ -84,8 +85,12 @@ public class Game : MonoBehaviour {
   
 	static public Game singleton;
 
-	static public Game getInstance() {
+	static public Game GetInstance() {
 		return singleton;
+	}
+
+	public PieceType[][] GetChessBoard() {
+		return this.chessBoard;
 	}
 
 	public void ChangeTurn() {
@@ -101,6 +106,8 @@ public class Game : MonoBehaviour {
 
 	public void SelectPiece(Piece piece) {
 
+		this.StopParticlesAnimation();
+
 		foreach (Transform child in transform) {
 			Behaviour otherHalo = child.gameObject.GetComponent("Halo") as Behaviour;
 			if(otherHalo == null)
@@ -115,24 +122,27 @@ public class Game : MonoBehaviour {
 		selectedObject = pieceObjects [piece.name];
 		selectedPiece = piece;
 
-		bool isBlack = selectedObject.isBlackPiece ();
+		int[][] availablePositionList = selectedObject.GetAvailableListToGo ();
 
-		if (selectedObject.isPawn()) { // when pawn
-			for(int i = 0; i < chessBoard.Length; i++){
-				if(isAvaibleToGo(i, selectedObject.col, isBlack)) {
+		for(int i = 0; i < availablePositionList.Length; i++){
+			ParticleSystem pSystem = GameObject.Find ("light_" + availablePositionList[i][0] + "/" + availablePositionList[i][1])
+				.GetComponentInChildren<ParticleSystem>();
+			if(pSystem == null) continue;
 
-				}
-			}
+			pSystem.Play();
 		}
 	}
-
+	
 	public void DeselectPiece(Piece piece) {
 		Behaviour halo = piece.GetComponent("Halo") as Behaviour;
 		halo.enabled = false;
 
 		selectedObject = null;
 		selectedPiece = null;
+		this.StopParticlesAnimation ();
+ }
 
+	private void StopParticlesAnimation() {
 		for (int i = 0; i < chessBoard.Length; i++) {
 			foreach (Transform child in GameObject.Find("light_" + (i + 1)).transform) {
 				ParticleSystem pSystem = child.gameObject.GetComponentInChildren<ParticleSystem>();
@@ -141,25 +151,6 @@ public class Game : MonoBehaviour {
 		}
 	}
 
-	public bool isAvaibleToGo(int row, int col, bool isBlack) {
-		if (this.chessBoard [row] [col] == PieceType.None) {
-			return true;
-		} else if(isBlack && (
-			this.chessBoard [row] [col] == PieceType.BlackKing ||
-			this.chessBoard [row] [col] == PieceType.BlackQueen ||
-			this.chessBoard [row] [col] == PieceType.BlackPawn ||
-			this.chessBoard [row] [col] == PieceType.BlackKnight ||
-			this.chessBoard [row] [col] == PieceType.BlackBishop ||
-			this.chessBoard [row] [col] == PieceType.BlackRock)){
-				return true;
-		}
-		else if(!isBlack) {
-			return true; // target is white and row-col is white
-		}
-		else 
-			return false;
-	}
-	
 	// Use this for initialization
 
 	void Awake() {
