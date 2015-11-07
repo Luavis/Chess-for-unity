@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using UnityStandardAssets.ImageEffects;
+using System;
 
 public enum PieceType {
 	WhiteKing = 1,
@@ -82,7 +83,7 @@ public class Game : MonoBehaviour {
 
 	Dictionary<string, PieceObject> pieceObjects = new Dictionary<string, PieceObject>();
 
-	GameTurn turn = GameTurn.White;
+	GameTurn turn = GameTurn.Black;
 	PieceObject selectedObject = null;
 	Piece selectedPiece = null;
 
@@ -92,13 +93,13 @@ public class Game : MonoBehaviour {
 		return singleton;
 	}
 
-	public void Move(int row, int col, float x, float z) {
+	public void Move(int row, int col, float x, float z, bool ignore = false) {
 
 		if (selectedObject == null || selectedPiece == null)
 			return;
 
-		if (selectedObject == null)
-			return;
+//		if (selectedObject == null)
+//			return;
 
 		int originRow = selectedObject.row;
 		int originCol = selectedObject.col;
@@ -126,7 +127,7 @@ public class Game : MonoBehaviour {
 							winMessage.text = "Black user Win!";
 					}
 					MeshRenderer renderer = pieceObjects[key].gameObject.GetComponent<MeshRenderer>();
-
+					pieceObjects[key].isDead = true;
 					renderer.enabled = false;
 					pieceObjects[key].row = -1;
 					pieceObjects[key].col = -1;
@@ -134,12 +135,20 @@ public class Game : MonoBehaviour {
 			}
 		}
 
+		if (Application.platform == RuntimePlatform.Android && !ignore) {
+			using (AndroidJavaClass cls_UnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
+				using (AndroidJavaObject obj_Activity = cls_UnityPlayer.GetStatic<AndroidJavaObject>("currentActivity")) {
+					obj_Activity .CallStatic ("sendPointToPoint", originRow, originCol, row, col);
+				}
+			}
+		}
+
 		this.chessBoard [row - 1] [col - 1] = selectedObject.pieceType;
 		this.chessBoard [originRow - 1] [originCol - 1] = PieceType.None;
 
-		this.DeselectPiece (selectedPiece); // deselect!
-
 		this.ChangeTurn ();
+
+		this.DeselectPiece (selectedPiece); // deselect!
 	}
 
 	public PieceType[][] GetChessBoard() {
@@ -159,18 +168,27 @@ public class Game : MonoBehaviour {
 		foreach (string name in whitePieceNames) {
 			GameObject piece = pieceObjects[name].gameObject;
 			BoxCollider collider = piece.GetComponent<BoxCollider>();
-			collider.enabled = (GameTurn.Black != this.turn);
+			if(pieceObjects[name].isDead) {
+				collider.enabled = false;
+			}
+			else {
+				collider.enabled = (GameTurn.Black != this.turn);
+			}
 		}
 
 		foreach (string name in blackPieceNames) {
 			GameObject piece = pieceObjects[name].gameObject;
 			BoxCollider collider = piece.GetComponent<BoxCollider>();
-			collider.enabled = (GameTurn.Black == this.turn);
+			if(pieceObjects[name].isDead) {
+				collider.enabled = false;
+			}
+			else {
+				collider.enabled = (GameTurn.Black == this.turn);
+			}
 		}
 	}
 
 	public void SelectPiece(Piece piece) {
-
 		this.StopParticlesAnimation();
 
 		foreach (Transform child in transform) {
@@ -347,5 +365,28 @@ public class Game : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 	
+	}
+
+	void recieveMsg(string msg) {
+		string[] androidMessage = msg.Split (',');
+
+		if (androidMessage.Length != 4)
+			return;
+
+
+		Vector3 targetPosition = GameObject.Find ("Cube-" + androidMessage [2] + "-" + androidMessage [3]).transform.localPosition;
+
+		string[] keys = (turn != GameTurn.Black) ? whitePieceNames : blackPieceNames;
+		int row = int.Parse (androidMessage [0]);
+		int col = int.Parse (androidMessage [1]);
+
+		foreach(string key in keys) {
+			if(pieceObjects[key].row == row && pieceObjects[key].col == col) {
+				selectedObject = pieceObjects[key];
+				selectedPiece = selectedObject.gameObject.GetComponent<Piece> ();
+			}
+		}
+
+		this.Move (int.Parse(androidMessage [2]), int.Parse (androidMessage [3]), targetPosition.x, targetPosition.z, true);
 	}
 }

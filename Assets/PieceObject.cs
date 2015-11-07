@@ -13,6 +13,8 @@ public class PieceObject {
 
 	public bool isMoved = false;
 
+	public bool isDead = false;
+
 	public bool IsBlackPiece() {
 		return (this.pieceType == PieceType.BlackBishop || 
 			this.pieceType == PieceType.BlackPawn || 
@@ -75,20 +77,43 @@ public class PieceObject {
 
 		if (this.IsPawn ()) { // when pawn
 			
-			int delta = isBlack ? 1 : -1;
+			List<int[]> candidate = new List<int[]> ();
+			PieceType[][] chessBoard =  Game.GetInstance().GetChessBoard();
+			int row = this.row - 1;
+			int col = this.col - 1;
 
-			if ((isBlack && this.row == 8) || (!isBlack && this.row == 1)) // is end to pawn
-				return ret; //return empty
+			if(isBlack) {
+				if(!isMoved) {
+					if(chessBoard[row + 2][col] == PieceType.None && chessBoard[row + 1][col] == PieceType.None)
+						candidate.Add (new int[]{this.row + 2, this.col});
+				}
 
-			if (this.isMoved)
-				ret = new int[][] {
-					new int[]{this.row + delta, this.col}
-				};
-			else
-				ret = new int[][] {
-					new int[]{this.row + delta, this.col},
-					new int[]{this.row + delta * 2, this.col},
-				};
+				if((row + 1 < 8) && chessBoard[row + 1][col] == PieceType.None)
+					candidate.Add (new int[]{this.row + 1, this.col});
+
+				if((col + 1 < 8 && row + 1 < 8) && chessBoard[row + 1][col + 1] != PieceType.None)
+					candidate.Add (new int[]{this.row + 1, this.col + 1});
+
+				if((col - 1 > 0 && row + 1 < 8) && chessBoard[row + 1][col - 1] != PieceType.None)
+					candidate.Add (new int[]{this.row + 1, this.col - 1});
+			}
+			else {
+				if(!isMoved) {
+					if(chessBoard[row - 2][col] == PieceType.None && chessBoard[row - 1][col] == PieceType.None)
+						candidate.Add (new int[]{this.row - 2, this.col});
+				}
+				
+				if((row - 1 > 0) && chessBoard[row - 1][col] == PieceType.None)
+					candidate.Add (new int[]{this.row - 1, this.col});
+				
+				if((col + 1 < 8 && row - 1 > 0) && chessBoard[row - 1][col + 1] != PieceType.None)
+					candidate.Add (new int[]{this.row - 1, this.col + 1});
+				
+				if((col - 1 > 0 && row - 1 > 0) && chessBoard[row - 1][col - 1] != PieceType.None)
+					candidate.Add (new int[]{this.row - 1, this.col - 1});
+			}
+
+			ret = candidate.ToArray();
 		} else if (this.IsKnight ()) {
 			List<int[]> candidate = new List<int[]> ();
 			int[] rowDelta = new int[]{2, -2};
